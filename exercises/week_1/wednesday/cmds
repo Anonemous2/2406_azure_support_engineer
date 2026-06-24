@@ -1,0 +1,2 @@
+python3 log_processor.py > output.txt 
+python3 output_web.py

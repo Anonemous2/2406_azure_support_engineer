@@ -1,0 +1,24 @@
+=========================================<br>
+SRE LOG ANALYSIS SUMMARY REPORT<br>
+=========================================<br>
+Total Requests Processed: 10<br>
+Unique Client IPs: 5<br>
+HTTP Status Code Breakdown: {200: 5, 401: 1, 500: 3, 404: 1}<br>
+Slow Requests (>100ms) Count: 3<br>
+-----------------------------------------<br>
+Detailed List of Unique Client IPs:<br>
+10.0.2.4
+
+192.168.1.10
+
+192.168.1.15
+
+192.168.1.20
+
+192.168.1.30
+
+
+<br>Detailed List of Slow Requests:<br>
+('/api/v1/checkout', 120)<br>
+('/api/v1/checkout', 115)<br>
+('/api/v1/checkout', 130)<br>

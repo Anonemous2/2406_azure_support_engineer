@@ -1,7 +1,8 @@
-""" Python file that handles the running of linux commands to gather current
-    system resource utilization and logging. """
-
 import subprocess
+
+# Project 0 modules:
+import options
+import logger
 
 class Diagnostics():
 
@@ -9,22 +10,46 @@ class Diagnostics():
         self.run_diagnostics()
 
     def run_diagnostics(self):
-        """ Checks the current status of this machine, logging the results to
-            a log file with the current time. """
+        self.run_usage()
         
-        # TODO: See 'man ps' and look up what all should be collected on current
-        # processes.
-        result = subprocess.Popen(["ps", '-A'], 
+    def run_usage(self):
+        # Using free --human, we can get the total RAM and Swap memory 
+        # avaliable.
+        proc = subprocess.Popen(["top", "-n", "1", "-b"], 
                                 stdout=subprocess.PIPE, 
                                 stderr=subprocess.STDOUT)
         # Check if the command failed to run correctly.
-        if result.returncode != 0:
-            Exception(f"SubProc returned a code of {result.returncode}")
+        if proc.returncode != 0:
+            Exception(f"Error running 'top': {proc.returncode}")
 
-        output = result.communicate()
-        # Test output
+        # TODO: Log procs/process command output.
+        output = proc.communicate()
         print(output[0].decode())
 
-# TEMP: TODO: REMOVE
-# Just create the diagnostics class.
-run_diagnostics = Diagnostics()
+    def run_memory(self):
+        # Using free --human, we can get the total RAM and Swap memory 
+        # avaliable.
+        proc = subprocess.Popen(["free", '-h'], 
+                                  stdout=subprocess.PIPE, 
+                                  stderr=subprocess.STDOUT)
+        # Check if the command failed to run correctly.
+        if proc.returncode != 0:
+            Exception(f"Error running 'free -h': {proc.returncode}")
+
+        # TODO: Log procs/process command output.
+        # output = proc.communicate()
+        # print(output[0].decode())
+
+    def run_disk(self):
+        # TODO: See 'man ps' and look up what all should be collected on current
+        # processes.
+        proc = subprocess.Popen(["ps", '-A'], 
+                                stdout=subprocess.PIPE, 
+                                stderr=subprocess.STDOUT)
+        # Check if the command failed to run correctly.
+        if proc.returncode != 0:
+            Exception(f"Error running 'ps -A': {proc.returncode}")
+
+        # TODO: Log procs/process command output.
+        # output = proc.communicate()
+        # print(output[0].decode())

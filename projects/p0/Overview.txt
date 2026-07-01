@@ -1,0 +1,13 @@
+I've designed project 0 as such:
+
+CLI interactions: The program's main function starts with tool.py, and can also be 
+launched with command arguments to test specific componets or run specific commands.
+
+By default, running 'python3 tools.py' will log current machine status and resources,
+then attempt to create a new lightweight VM and it's associated resources, and validate
+that it can be connected to. This will be done by launching a ssh connection, loading
+the FastAPI example and running the docker containers, then checking for the http 
+server.
+
+Logging - will be saved to a SQLite file DB, from which the output of commands will
+be saved, as well as active machines and thier corrisponding 'clean-up' commands to run.

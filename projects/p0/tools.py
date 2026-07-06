@@ -36,10 +36,10 @@ if __name__ == "__main__":
             deployment.configure()
             deployment.deploy()
 
-            print("Exiting program.")
+            print("Deployment complete, exiting program.")
             exit(0)
         else:
-            print("Deployment complete, exiting program.")
+            print("Exiting program.")
             exit(0)
     
     # Else, we're in interactive mode, where we'll run in a loop asking the

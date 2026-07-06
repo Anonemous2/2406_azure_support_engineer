@@ -2,6 +2,7 @@ import sqlite3
 import subprocess
 import json
 import re
+import sys
 
 # Project 0 modules:
 import options
@@ -123,7 +124,7 @@ class DB_Logs():
     
     def print_commands(self, only_errors=False):
         if only_errors:
-            self.cursor.execute(f"SELECT * FROM command_logs WHERE error=1 ORDER BY time ASC")
+            self.cursor.execute(f'SELECT * FROM command_logs WHERE error="True" ORDER BY time ASC')
         else:
             self.cursor.execute(f"SELECT * FROM command_logs ORDER BY time ASC")
         print_format = "{:<4} {:<8} {:<20}\n\t{:<400}"

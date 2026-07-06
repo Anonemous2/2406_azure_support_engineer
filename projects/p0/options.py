@@ -1,14 +1,15 @@
 import re
 
+# Special characters for formating printed strings.
+f_error = '\033[91m'
+f_warn  = '\033[93m'
+f_info  = '\033[36m'
+f_bold  = '\033[1m'
+f_uline = '\033[4m'
+f_end   = '\033[0m'
+
 # Tool options, which will modify the behavior of the program.
 class Tools_Options():
-
-    # Special characters for formating printed strings.
-    f_error = '\033[91m'
-    f_warn  = '\033[93m'
-    f_bold  = '\033[1m'
-    f_uline = '\033[4m'
-    f_end   = '\033[0m'
 
     def __init__(self):
         # Script/Tool options:
@@ -33,6 +34,9 @@ class Tools_Options():
         self.opt_fast = False
         # '--verbose' / '-v' Prints and logs additional infomation.
         self.opt_verbose = False
+        # '--interactive' / '-i' Runs interactive mode, running commands until
+        # the user exits.
+        self.opt_interactive = False
         # TODO: Commands to view, filter, and operate on the logs.
         # TODO: More as needed.
 
@@ -51,15 +55,17 @@ class Tools_Options():
             active.append("--fast")
         if self.opt_verbose:
             active.append("--verbose")
+        if self.opt_interactive:
+            active.append("--interactive")
         return "Active options: " + str(active)
     
     def help(self, cmd):
         print("Runs SRE diagnostics and can deploy VMs to azure.")
         print("")
-        print(self.f_bold + self.f_uline + "Usage:" + self.f_end + \
+        print(f_bold + f_uline + "Usage:" + f_end + \
               f" {cmd} + [OPTION]...")
         print("")
-        # print(self.f_bold + self.f_uline + "Arguments:" + self.f_end + \
+        # print(f_bold + f_uline + "Arguments:" + f_end + \
         #       f" {cmd} + [TODO]...")
         # print("")
 
@@ -70,7 +76,7 @@ class Tools_Options():
             c0 = ' ' * c0_width
             if short:
                 c0 = c0[:c0_width - 2] + \
-                    f"-{self.f_bold}{short[0]}{self.f_end}"
+                    f"-{f_bold}{short[0]}{f_end}"
             # Choose correct separation.
             if short and long:
                 c0 += ", "
@@ -79,10 +85,10 @@ class Tools_Options():
             # Format long option in column 1.
             c1 = ' ' * c1_width
             if long:
-                c1 = f"--{self.f_bold}{long}{self.f_end}" + c1[len(long) + 2:]
+                c1 = f"--{f_bold}{long}{f_end}" + c1[len(long) + 2:]
             print(c0 + c1 + info)
         
-        print(self.f_bold + self.f_uline + "Options:" + self.f_end)
+        print(f_bold + f_uline + "Options:" + f_end)
         help_format_option('n', 'nolog', 
                            'Skips writing infomation to the persistant DB.')
         help_format_option('d', 'diagnostics', 
@@ -93,12 +99,14 @@ class Tools_Options():
                            'Autofills all user input, allow for easy testing.')
         help_format_option('v', 'verbose', 
                            'Prints and logs additional infomation.')
+        help_format_option('i', 'interactive', 
+                           'Runs interactive mode, running commands until the user exits..')
         exit(0)
 
     def invalid_arg(self, cmd, arg):
-        print(self.f_error + "error" + self.f_end + \
+        print(f_error + "Error" + f_end + \
               ": unexpected argument '" + \
-              self.f_warn + arg + self.f_end + \
+              f_warn + arg + f_end + \
               "' found")
         print("")
         print(f"Usage: {cmd} [OPTION]...")
@@ -133,6 +141,9 @@ class Tools_Options():
                 elif re.search(r'^verbose$', arg_given, flags=re.IGNORECASE):
                     self.opt_verbose = True
 
+                elif re.search(r'^interactive$', arg_given, flags=re.IGNORECASE):
+                    self.opt_interactive = True
+
                 else:
                     self.invalid_arg(cmd, f"--{arg_given}")
             else:
@@ -162,6 +173,10 @@ class Tools_Options():
                     if re.search(r'v', arg_given, flags=re.IGNORECASE):
                         self.opt_verbose = True
                         arg_given = re.sub(r'v', '', arg_given, flags=re.IGNORECASE)
+
+                    if re.search(r'i', arg_given, flags=re.IGNORECASE):
+                        self.opt_interactive = True
+                        arg_given = re.sub(r'i', '', arg_given, flags=re.IGNORECASE)
 
                     if not re.search(r'^$', arg_given, flags=re.IGNORECASE):
                         self.invalid_arg(cmd, f"-{arg_given[0]}")

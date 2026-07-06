@@ -13,7 +13,16 @@ class Diagnostics():
     def run_diagnostics(self):
         self.run_usage()
 
-    def run_cpu(self, usage):
+        # Then save usage to persistent db.
+        logger.logs.insert_performance(self.cpu_usage, 
+                                       self.cpu_cores, 
+                                       self.cpu_speed,
+                                       self.mem_free, 
+                                       self.mem_total,
+                                       self.store_free, 
+                                       self.store_total)
+
+    def run_cpu(self):
         # Using free --human, we can get the total RAM and Swap memory 
         # avaliable.
         proc_info = subprocess.Popen(["cat", "/proc/cpuinfo"], 
@@ -46,19 +55,19 @@ class Diagnostics():
 
         # TODO: Error handling (unexpected re failures).
         text_name = re.split(r'\n', output_name[0].decode())
-        text_name = re.search(r'^model name\s+:\s+(.+)', text_name[0]).group(1)
-        
+        try:
+            self.cpu_name = re.search(r'^model name\s+:\s+(.+)', text_name[0]).group(1)
+        except Exception as e:
+            # Sometimes finding the cpu name fails, skip in those cases.
+            self.cpu_name = " "
+            
         text_cores = re.split(r'\n', output_cores[0].decode())
-        text_cores = re.search(r'^siblings\s+:\s+(\d+)', text_cores[0]).group(1)
+        self.cpu_cores = re.search(r'^siblings\s+:\s+(\d+)', text_cores[0]).group(1)
         
         text_speed = re.split(r'\n', output_speed[0].decode())
-        text_speed = round(float(re.search(r'^cpu MHz\s+:\s+(\S+)', text_speed[0]).group(1)) / 1000, 2)
+        self.cpu_speed = round(float(re.search(r'^cpu MHz\s+:\s+(\S+)', 
+                                               text_speed[0]).group(1)) / 1000, 2)
 
-        print(f'CPU: {text_name}')
-        display_cpu = f'{usage}% CPU usage, {text_cores} logical processors at {text_speed} GHz'
-        print(display_cpu)
-
-        
     def run_usage(self):
         # Using free --human, we can get the total RAM and Swap memory 
         # avaliable.
@@ -90,16 +99,13 @@ class Diagnostics():
 
         # After parse and capturing all top info, reformat and give a summary.
         # Capture bonus CPU info for displaying.
-        self.run_cpu(round(float(line_top.group(3)) * 100, 1))
+        self.cpu_usage = round(float(line_top.group(3)) * 100, 1)
+        self.run_cpu()
         
-        memory_used  = round((float(line_mem.group(3)) / float(line_mem.group(1)) \
+        self.mem_used  = round((float(line_mem.group(3)) / float(line_mem.group(1)) \
                              * 100), 1)
-        memory_free  = round((float(line_mem.group(2)) / 1024), 1)
-        memory_total = round((float(line_mem.group(1)) / 1024), 1)
-
-        display_memory = f'{memory_used}% Memory usage, ' \
-            f'({memory_free} GiB free, {memory_total} GiB total)'
-        print(display_memory)
+        self.mem_free  = round((float(line_mem.group(2)) / 1024), 1)
+        self.mem_total = round((float(line_mem.group(1)) / 1024), 1)
 
         self.run_disk()
 
@@ -121,8 +127,23 @@ class Diagnostics():
         reg_ex = r'total\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)'
         line = re.search(reg_ex, text_out[-2])
 
-        display_line = f'{line.group(4)} Storage usage, ' \
-            f'({line.group(3)} free, {line.group(1)} total)'
-        print(display_line)
-        # TODO: Log procs/process command output.
+        self.store_usage = line.group(4)
+        self.store_free  = line.group(3)
+        self.store_total = line.group(1)
+
+    def print_diagnostics(self):
+        # Use format string to get a more readable output.
+        print(options.f_info + options.f_bold + "System Performace:" + options.f_end)
+        print_format = " {:>4} {:<14} {:<60}"
+        # CPU
+        print(f' CPU: {self.cpu_name}')
+        print(print_format.format(f'{self.cpu_usage}%', 'CPU usage,',
+                                  f'{self.cpu_cores} logical processors at {self.cpu_speed} GHz'))
+        # Memory
+        print(print_format.format(f'{self.mem_used}%', 'Memory usage,',
+                                  f'({self.mem_free} GiB free, {self.mem_total} GiB total)'))
+        # Storage
+        print(print_format.format(f'{self.store_usage}', 'Storage usage,',
+                                  f'({self.store_free} free, {self.store_total} total)'))
+
 

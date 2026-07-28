@@ -8,7 +8,6 @@ set -euo pipefail
 tenantId="00000000-0000-0000-0000-000000000000"
 clientId="11111111-1111-1111-1111-111111111111"
 clientSecret="mock-retailbank-client-secret-value-77777"
-scope="https://api.retailbank.com/.default"
 tokenEndpoint="https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
 
 # Target resolution
@@ -45,11 +44,7 @@ if [ "$LOCAL_MODE" = true ]; then
     echo "[INFO] Starting container 'auth-api-service'..."
     # Stop existing container if any
     docker rm -f auth-api-service &>/dev/null || true
-    if [ "$tenantId" = "00000000-0000-0000-0000-000000000000" ]; then
-        docker run -d --name auth-api-service -p 8000:8000 retailbank-auth-api
-    else
-        docker run -d --name auth-api-service -p 8000:8000 -e TENANT_ID="$tenantId" retailbank-auth-api
-    fi
+    docker run -d --name auth-api-service -p 8000:8000 retailbank-auth-api
 
     # Ensure the container is stopped and removed on exit
     cleanup() {
@@ -93,6 +88,7 @@ fi
 
 # 2. Acquire JWT Token
 log_section "2. ACQUIRING TOKEN FROM ENTRA ID ENDPOINT"
+echo "POST Request: $tokenEndpoint"
 
 simulate_token_request() {
     local scopes=$1
@@ -119,38 +115,13 @@ simulate_token_request() {
 EOF
 }
 
-acquire_token() {
-    local requested_role=$1
-    if [ "$tenantId" = "00000000-0000-0000-0000-000000000000" ]; then
-        echo "[INFO] Using simulated/mock token (local mock mode)" >&2
-        simulate_token_request "$requested_role"
-    else
-        echo "[INFO] Requesting real token from Entra ID endpoint: $tokenEndpoint" >&2
-        # In real mode, use client credentials flow
-        local response
-        response=$(curl -s -X POST "$tokenEndpoint" \
-            -H "Content-Type: application/x-www-form-urlencoded" \
-            -d "grant_type=client_credentials" \
-            -d "client_id=$clientId" \
-            -d "client_secret=$clientSecret" \
-            -d "scope=$scope" 2>&1)
-            
-        if echo "$response" | grep -q "error"; then
-            echo "[ERROR] Entra ID token acquisition failed. Response:" >&2
-            echo "$response" >&2
-            exit 1
-        fi
-        echo "$response"
-    fi
-}
-
 echo "[INFO] Fetching valid Transaction.Write Bearer token..."
-tokenDataValid=$(acquire_token "Transaction")
+tokenDataValid=$(simulate_token_request "Transaction")
 tokenValid=$(echo "$tokenDataValid" | python3 -c "import sys, json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null || \
              echo "$tokenDataValid" | python -c "import sys, json; print(json.load(sys.stdin).get('access_token',''))")
 
 echo "[INFO] Fetching unauthorized token (Audit role only)..."
-tokenDataInvalid=$(acquire_token "Audit")
+tokenDataInvalid=$(simulate_token_request "Audit")
 tokenInvalid=$(echo "$tokenDataInvalid" | python3 -c "import sys, json; print(json.load(sys.stdin).get('access_token',''))" 2>/dev/null || \
                echo "$tokenDataInvalid" | python -c "import sys, json; print(json.load(sys.stdin).get('access_token',''))")
 
